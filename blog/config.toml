@@ -1,0 +1,24 @@
+base_url = "https://bashraccoon.de/blog"
+title = "bashraccoon Blog"
+description = "Technik, Linux, Infrastructure & mehr"
+author = "schmid-di"
+
+[markdown]
+highlight_code = true
+highlight_theme = "ayu-dark"
+smart_punctuation = true
+
+[extra]
+nav = [
+  { name = "Home", url = "/" },
+  { name = "Posts", url = "/posts/" },
+  { name = "About", url = "/about/" }
+]
+
+social = [
+  { name = "Mastodon", url = "https://bashraccoon.de/@admin" },
+  { name = "GitHub", url = "https://github.com/schmid-di" }
+]
+
+theme_color = "#1a1a1a"
+accent_color = "#00d9ff"
