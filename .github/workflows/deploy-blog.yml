@@ -1,0 +1,122 @@
+name: Deploy Blog to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'blog/content/**'
+      - 'blog/static/**'
+      - 'blog/config.toml'
+      - '.github/workflows/deploy-blog.yml'
+  pull_request:
+    paths:
+      - 'blog/content/**'
+
+env:
+  VPS_HOST: ${{ secrets.VPS_HOST }}
+  VPS_USER: ${{ secrets.VPS_USER }}
+  VPS_PORT: ${{ secrets.VPS_PORT }}
+  DEPLOY_PATH: /opt/mastodon-podman
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p $VPS_PORT $VPS_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 📝 Validate Markdown
+        run: |
+          echo "✓ Checking Markdown files..."
+          find blog/content -name "*.md" -type f | while read f; do
+            echo "  Checking: $f"
+            head -5 "$f" | grep -q "^+++" && echo "    ✓ Valid" || echo "    ⚠️  No frontmatter!"
+          done
+
+      - name: 🚀 Deploy blog files to VPS
+        run: |
+          echo "📤 Syncing blog content..."
+          rsync -avz \
+            --delete \
+            -e "ssh -p $VPS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            blog/content/ \
+            $VPS_USER@$VPS_HOST:$DEPLOY_PATH/blog/content/
+          
+          echo "📤 Syncing blog static files..."
+          rsync -avz \
+            -e "ssh -p $VPS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            blog/static/ \
+            $VPS_USER@$VPS_HOST:$DEPLOY_PATH/blog/static/
+          
+          echo "📤 Syncing blog config..."
+          rsync -avz \
+            -e "ssh -p $VPS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            blog/config.toml \
+            $VPS_USER@$VPS_HOST:$DEPLOY_PATH/blog/config.toml
+
+      - name: 🏗️  Build blog on VPS with Zola
+        run: |
+          ssh -p $VPS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << 'SSHEOF'
+          cd ${{ env.DEPLOY_PATH }}/blog
+          
+          # Zola vorhanden?
+          if ! command -v zola &> /dev/null; then
+            echo "📥 Installing Zola..."
+            curl -sL https://github.com/getzola/zola/releases/download/v0.18.0/zola-v0.18.0-x86_64-unknown-linux-gnu.tar.gz \
+              | tar xz -C /usr/local/bin/
+          fi
+          
+          echo "🏗️  Building blog..."
+          zola build
+          
+          echo "✅ Blog built!"
+          SSHEOF
+
+      - name: 🔄 Reload NGINX (no downtime)
+        run: |
+          ssh -p $VPS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << 'SSHEOF'
+          cd ${{ env.DEPLOY_PATH }}
+          
+          echo "🔍 Testing NGINX config..."
+          podman-compose exec -T nginx nginx -t
+          
+          echo "🔄 Reloading NGINX..."
+          podman-compose exec -T nginx nginx -s reload
+          
+          echo "✅ NGINX reloaded"
+          SSHEOF
+
+      - name: ✅ Verify deployment
+        run: |
+          ssh -p $VPS_PORT -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << 'SSHEOF'
+          cd ${{ env.DEPLOY_PATH }}/blog
+          
+          if [ -d "public" ]; then
+            echo "✅ Blog successfully generated:"
+            find public -name "*.html" | wc -l | xargs echo "   HTML files:"
+          else
+            echo "❌ Error: public directory not found!"
+            exit 1
+          fi
+          SSHEOF
+
+      - name: 📊 Status
+        if: success()
+        run: |
+          echo "✅ Blog deployed successfully!"
+          echo "📍 URL: https://${{ secrets.VPS_DOMAIN }}/blog"
+
+      - name: ⚠️ Failed
+        if: failure()
+        run: |
+          echo "❌ Deployment failed - check logs above!"
+          exit 1
