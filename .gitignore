@@ -1,0 +1,33 @@
+# 🔐 Secrets & Credentials (NIEMALS commiten!)
+.env.local
+.env.*.local
+secrets/*.txt
+secrets/*.key
+*.pem
+*.key
+id_rsa*
+deploy_key*
+
+# 📦 Generated Files
+blog/public/
+
+# 🐳 Docker/Podman
+.podman/
+.docker/
+
+# 📝 Logs
+*.log
+logs/
+
+# 💾 Database
+*.db
+*.sqlite
+
+# 📂 OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
