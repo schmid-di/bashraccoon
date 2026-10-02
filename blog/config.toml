@@ -3,6 +3,11 @@ title = "bashraccoon Blog"
 description = "Technik, Linux, Infrastructure & mehr"
 author = "schmid-di"
 
+taxonomies = [
+  { name = "tags" },
+  { name = "categories" },
+]
+
 [markdown]
 highlight_code = true
 highlight_theme = "ayu-dark"
@@ -10,9 +15,9 @@ smart_punctuation = true
 
 [extra]
 nav = [
-  { name = "Home", url = "/" },
-  { name = "Posts", url = "/posts/" },
-  { name = "About", url = "/about/" }
+  { name = "Home", url = "/blog/" },
+  { name = "Posts", url = "/blog/posts/" },
+  { name = "About", url = "/blog/about/" }
 ]
 
 social = [
