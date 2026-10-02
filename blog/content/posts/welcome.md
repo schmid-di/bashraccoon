@@ -6,7 +6,6 @@ description = "Das ist mein erster Post auf meinem eigenen Server"
 
 [taxonomies]
 tags = ["meta"]
-categories = ["blog"]
 +++
 
 # Willkommen! 🚀
