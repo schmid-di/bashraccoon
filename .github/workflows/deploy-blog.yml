@@ -1,5 +1,14 @@
 name: Deploy Blog to VPS
-
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'blog/content/**'
+      - 'blog/static/**'
+      - 'blog/config.toml'
+      - '.github/workflows/deploy-blog.yml'
 on:
   push:
     branches:
