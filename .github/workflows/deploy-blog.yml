@@ -9,15 +9,6 @@ on:
       - 'blog/static/**'
       - 'blog/config.toml'
       - '.github/workflows/deploy-blog.yml'
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'blog/content/**'
-      - 'blog/static/**'
-      - 'blog/config.toml'
-      - '.github/workflows/deploy-blog.yml'
   pull_request:
     paths:
       - 'blog/content/**'
